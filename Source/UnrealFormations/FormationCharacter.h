@@ -20,4 +20,9 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+	//
+	void SetTarget(const FVector& target) { m_vTarget = target; }
+
+private:
+	FVector m_vTarget;
 };

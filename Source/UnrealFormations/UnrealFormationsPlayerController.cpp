@@ -31,56 +31,18 @@ void AUnrealFormationsPlayerController::SetupInputComponent()
 
 	InputComponent->BindAction("SetDestination", IE_Pressed, this, &AUnrealFormationsPlayerController::OnSetDestinationPressed);
 	InputComponent->BindAction("SetDestination", IE_Released, this, &AUnrealFormationsPlayerController::OnSetDestinationReleased);
-
-	// support touch devices 
-	InputComponent->BindTouch(EInputEvent::IE_Pressed, this, &AUnrealFormationsPlayerController::MoveToTouchLocation);
-	InputComponent->BindTouch(EInputEvent::IE_Repeat, this, &AUnrealFormationsPlayerController::MoveToTouchLocation);
-
-	InputComponent->BindAction("ResetVR", IE_Pressed, this, &AUnrealFormationsPlayerController::OnResetVR);
-}
-
-void AUnrealFormationsPlayerController::OnResetVR()
-{
-	UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition();
 }
 
 void AUnrealFormationsPlayerController::MoveToMouseCursor()
 {
-	if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
-	{
-		if (AUnrealFormationsCharacter* MyPawn = Cast<AUnrealFormationsCharacter>(GetPawn()))
-		{
-			if (MyPawn->GetCursorToWorld())
-			{
-				UAIBlueprintHelperLibrary::SimpleMoveToLocation(this, MyPawn->GetCursorToWorld()->GetComponentLocation());
-			}
-		}
-	}
-	else
-	{
-		// Trace to see what is under the mouse cursor
-		FHitResult Hit;
-		GetHitResultUnderCursor(ECC_Visibility, false, Hit);
+	// Trace to see what is under the mouse cursor
+	FHitResult Hit;
+	GetHitResultUnderCursor(ECC_Visibility, false, Hit);
 
-		if (Hit.bBlockingHit)
-		{
-			// We hit something, move there
-			SetNewMoveDestination(Hit.ImpactPoint);
-		}
-	}
-}
-
-void AUnrealFormationsPlayerController::MoveToTouchLocation(const ETouchIndex::Type FingerIndex, const FVector Location)
-{
-	FVector2D ScreenSpaceLocation(Location);
-
-	// Trace to see what is under the touch location
-	FHitResult HitResult;
-	GetHitResultAtScreenPosition(ScreenSpaceLocation, CurrentClickTraceChannel, true, HitResult);
-	if (HitResult.bBlockingHit)
+	if (Hit.bBlockingHit)
 	{
 		// We hit something, move there
-		SetNewMoveDestination(HitResult.ImpactPoint);
+		SetNewMoveDestination(Hit.ImpactPoint);
 	}
 }
 
@@ -103,10 +65,20 @@ void AUnrealFormationsPlayerController::OnSetDestinationPressed()
 {
 	// set flag to keep updating destination until released
 	bMoveToMouseCursor = true;
+	AUnrealFormationsCharacter* MyPawn = Cast<AUnrealFormationsCharacter>(GetPawn());
+	if (MyPawn)
+	{
+		MyPawn->SetMoveToCursor(true);
+	}
 }
 
 void AUnrealFormationsPlayerController::OnSetDestinationReleased()
 {
 	// clear flag to indicate we should stop updating the destination
 	bMoveToMouseCursor = false;
+	AUnrealFormationsCharacter* MyPawn = Cast<AUnrealFormationsCharacter>(GetPawn());
+	if (MyPawn)
+	{
+		MyPawn->SetMoveToCursor(false);
+	}
 }

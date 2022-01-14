@@ -38,6 +38,6 @@ void AActorSpawner::SpawnActor()
 
 	if (AUnrealFormationsCharacter* MyPawn = Cast<AUnrealFormationsCharacter>(UGameplayStatics::GetPlayerPawn(this, 0)))
 	{
-		MyPawn->AddUnitCharacter(GetWorld()->SpawnActor<AActor>(GeneratedBP->GeneratedClass, SpawnLocation, SpawnRotation));
+		MyPawn->AddUnitCharacter(GetWorld()->SpawnActor<AFormationCharacter>(GeneratedBP->GeneratedClass, SpawnLocation, SpawnRotation));
 	}
 }

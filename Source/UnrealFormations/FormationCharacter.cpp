@@ -1,13 +1,9 @@
 #include "FormationCharacter.h"
 //
 #include "UObject/ConstructorHelpers.h"
-#include "Camera/CameraComponent.h"
-#include "Components/DecalComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
-#include "GameFramework/SpringArmComponent.h"
-#include "HeadMountedDisplayFunctionLibrary.h"
 #include "Materials/Material.h"
 #include "Engine/World.h"
 #include "UnrealFormationsCharacter.h"
@@ -39,10 +35,15 @@ void AFormationCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	SetTarget(GetActorLocation());
 }
 
 // Called every frame
 void AFormationCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	
+	m_vTarget.Z = GetActorLocation().Z;
+	FVector v = m_vTarget - GetActorLocation();
+	AddMovementInput(v);
 }

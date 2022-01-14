@@ -6,6 +6,8 @@
 #include "GameFramework/Character.h"
 #include "UnrealFormationsCharacter.generated.h"
 
+class AFormationCharacter;
+
 UCLASS(Blueprintable)
 class AUnrealFormationsCharacter : public ACharacter
 {
@@ -24,7 +26,8 @@ public:
 	/** Returns CursorToWorld subobject **/
 	FORCEINLINE class UDecalComponent* GetCursorToWorld() { return CursorToWorld; }
 	//
-	void AddUnitCharacter(AActor* unitCharacter);
+	void AddUnitCharacter(AFormationCharacter* unitCharacter);
+	void SetMoveToCursor(bool b) { m_bMoveToCursor = b; }
 
 private:
 	/** Top down camera */
@@ -39,7 +42,8 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UDecalComponent* CursorToWorld;
 	//
-	TArray<AActor*> m_UnitCharacters;
+	TArray<AFormationCharacter*> m_UnitCharacters;
+	bool m_bMoveToCursor = false;
 
 protected:
 	void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent);
