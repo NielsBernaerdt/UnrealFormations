@@ -11,6 +11,10 @@
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "Materials/Material.h"
 #include "Engine/World.h"
+//
+#include "Kismet/GameplayStatics.h"
+#include "ActorSpawner.h"
+#include "FormationCharacter.h"
 
 AUnrealFormationsCharacter::AUnrealFormationsCharacter()
 {
@@ -57,6 +61,12 @@ AUnrealFormationsCharacter::AUnrealFormationsCharacter()
 	PrimaryActorTick.bStartWithTickEnabled = true;
 }
 
+void AUnrealFormationsCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
+{
+	PlayerInputComponent->BindAction("SpawnActors", IE_Released, this, &AUnrealFormationsCharacter::SpawnActors);
+	PlayerInputComponent->BindAction("DestroyActors", IE_Released, this, &AUnrealFormationsCharacter::DestroyActors);
+}
+
 void AUnrealFormationsCharacter::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
@@ -87,4 +97,34 @@ void AUnrealFormationsCharacter::Tick(float DeltaSeconds)
 			CursorToWorld->SetWorldRotation(CursorR);
 		}
 	}
+}
+
+void AUnrealFormationsCharacter::SpawnActors()
+{
+	//Find the Actor Spawner in the world, and invoke it's Spawn Actor function
+	AActor* ActorSpawnerTofind = UGameplayStatics::GetActorOfClass(GetWorld(), AActorSpawner::StaticClass());
+
+	AActorSpawner* ActorSpawnerReference = Cast<AActorSpawner>(ActorSpawnerTofind);
+	if (ActorSpawnerReference)
+	{
+		ActorSpawnerReference->SpawnActor();
+	}
+}
+
+void AUnrealFormationsCharacter::DestroyActors()
+{
+	if (m_UnitCharacters.Num() < 1)
+		return;
+	//Destroy the last added actor
+	AActor* actor = m_UnitCharacters.Last();
+	m_UnitCharacters.RemoveAt(m_UnitCharacters.Num()-1);
+	actor->Destroy();
+}
+
+void AUnrealFormationsCharacter::AddUnitCharacter(AActor* unitCharacter )
+{
+	const FString& debugMessage = TEXT("ACTOR ADDED");
+	if (GEngine)
+		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, debugMessage);
+	m_UnitCharacters.Add(unitCharacter);
 }

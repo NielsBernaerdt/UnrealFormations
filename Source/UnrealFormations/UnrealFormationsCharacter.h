@@ -23,6 +23,8 @@ public:
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	/** Returns CursorToWorld subobject **/
 	FORCEINLINE class UDecalComponent* GetCursorToWorld() { return CursorToWorld; }
+	//
+	void AddUnitCharacter(AActor* unitCharacter);
 
 private:
 	/** Top down camera */
@@ -36,4 +38,11 @@ private:
 	/** A decal that projects to the cursor location. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UDecalComponent* CursorToWorld;
+	//
+	TArray<AActor*> m_UnitCharacters;
+
+protected:
+	void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent);
+	void SpawnActors();
+	void DestroyActors();
 };
