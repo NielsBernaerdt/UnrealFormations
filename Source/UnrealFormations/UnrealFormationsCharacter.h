@@ -7,6 +7,8 @@
 #include "UnrealFormationsCharacter.generated.h"
 
 class AFormationCharacter;
+class Flee;
+class BlendedSteering;
 
 UCLASS(Blueprintable)
 class AUnrealFormationsCharacter : public ACharacter
@@ -44,6 +46,16 @@ private:
 	//
 	TArray<AFormationCharacter*> m_UnitCharacters;
 	bool m_bMoveToCursor = false;
+	FVector m_vTargetLocation;
+	TArray<FVector> m_vFormationDefault;
+	TArray<FVector> m_vFormationRotated;
+	int nrActors = 0;
+
+	void ConstructLineFormation();
+	void ConstructCircleFormation();
+	void ConstructTriangleFormation();
+	void ApplyRotation();
+	void (AUnrealFormationsCharacter::*m_fpCurrentFormation)() = &AUnrealFormationsCharacter::ConstructLineFormation;
 
 protected:
 	void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent);

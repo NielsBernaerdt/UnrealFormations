@@ -21,8 +21,9 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 	//
-	void SetTarget(const FVector& target) { m_vTarget = target; }
+	void SetTarget(const FVector& v) { m_vTarget = v; }
 
 private:
 	FVector m_vTarget;
+	const float m_fAnimationDistance = 10;
 };

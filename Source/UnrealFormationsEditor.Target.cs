@@ -10,5 +10,6 @@ public class UnrealFormationsEditorTarget : TargetRules
 		Type = TargetType.Editor;
 		DefaultBuildSettings = BuildSettingsVersion.V2;
 		ExtraModuleNames.Add("UnrealFormations");
+		ExtraModuleNames.Add("Steering");
 	}
 }

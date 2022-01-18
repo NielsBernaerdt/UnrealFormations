@@ -10,5 +10,6 @@ public class UnrealFormationsTarget : TargetRules
 		Type = TargetType.Game;
 		DefaultBuildSettings = BuildSettingsVersion.V2;
 		ExtraModuleNames.Add("UnrealFormations");
+		ExtraModuleNames.Add("Steering");
 	}
 }

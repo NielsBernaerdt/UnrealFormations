@@ -13,8 +13,10 @@
 #include "Engine/World.h"
 //
 #include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetSystemLibrary.h"
 #include "ActorSpawner.h"
 #include "FormationCharacter.h"
+#include "Steering/SteeringBehaviours.h"
 
 AUnrealFormationsCharacter::AUnrealFormationsCharacter()
 {
@@ -65,6 +67,9 @@ void AUnrealFormationsCharacter::SetupPlayerInputComponent(class UInputComponent
 {
 	PlayerInputComponent->BindAction("SpawnActors", IE_Released, this, &AUnrealFormationsCharacter::SpawnActors);
 	PlayerInputComponent->BindAction("DestroyActors", IE_Released, this, &AUnrealFormationsCharacter::DestroyActors);
+	PlayerInputComponent->BindAction("LineFormation", IE_Released, this, &AUnrealFormationsCharacter::ConstructLineFormation);
+	PlayerInputComponent->BindAction("CircleFormation", IE_Released, this, &AUnrealFormationsCharacter::ConstructCircleFormation);
+	PlayerInputComponent->BindAction("TriangleFormation", IE_Released, this, &AUnrealFormationsCharacter::ConstructTriangleFormation);
 }
 
 void AUnrealFormationsCharacter::Tick(float DeltaSeconds)
@@ -84,10 +89,14 @@ void AUnrealFormationsCharacter::Tick(float DeltaSeconds)
 
 			if (m_bMoveToCursor == true)
 			{
-				for (auto e : m_UnitCharacters)
-				{
-					e->SetTarget(TraceHitResult.Location);
-				}
+				m_vTargetLocation = TraceHitResult.Location;
+				(this->*m_fpCurrentFormation)();
+			}
+			size_t i{};
+			for (auto e : m_UnitCharacters)
+			{
+				e->SetTarget(m_vFormationRotated[i]);
+				++i;
 			}
 		}
 	}
@@ -102,6 +111,7 @@ void AUnrealFormationsCharacter::SpawnActors()
 	if (ActorSpawnerReference)
 	{
 		ActorSpawnerReference->SpawnActor();
+		(this->*m_fpCurrentFormation)();
 	}
 }
 
@@ -113,12 +123,114 @@ void AUnrealFormationsCharacter::DestroyActors()
 	AActor* actor = m_UnitCharacters.Last();
 	m_UnitCharacters.RemoveAt(m_UnitCharacters.Num()-1);
 	actor->Destroy();
+	(this->*m_fpCurrentFormation)();
 }
 
 void AUnrealFormationsCharacter::AddUnitCharacter(AFormationCharacter* unitCharacter)
 {
-	const FString& debugMessage = TEXT("ACTOR ADDED");
-	if (GEngine)
-		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, debugMessage);
 	m_UnitCharacters.Add(unitCharacter);
+}
+
+void AUnrealFormationsCharacter::ConstructLineFormation()
+{
+	//
+	m_fpCurrentFormation = &AUnrealFormationsCharacter::ConstructLineFormation;
+	//
+	float spacing = 150;
+	m_vFormationDefault.Empty();
+	FVector pos = GetActorLocation();
+	pos.X -= m_UnitCharacters.Num() / 2 * spacing;
+	for (auto e : m_UnitCharacters)
+	{
+		m_vFormationDefault.Add(pos);
+		e->SetTarget(pos);
+		pos.X += spacing;
+	}
+	//apply rotation
+	ApplyRotation();
+}
+
+void AUnrealFormationsCharacter::ConstructCircleFormation()
+{
+	//
+	m_fpCurrentFormation = &AUnrealFormationsCharacter::ConstructCircleFormation;
+	//
+	if (m_UnitCharacters.Num() == 0)
+		return;
+
+	m_vFormationRotated.Empty();
+	FVector origin = GetActorLocation();
+	float spacing = 150;
+	float radius = spacing * m_UnitCharacters.Num() / (2 * PI);
+	float angle = 360 / m_UnitCharacters.Num();
+	FVector pos = GetActorLocation();
+
+
+
+	for (auto e : m_UnitCharacters)
+	{
+		//e->SetTarget(FVector{ float(pos.X + radius * cos(angle)), float(pos.Y + radius * sin(angle)), 0 });
+	
+		//UKismetSystemLibrary::DrawDebugPoint(e, { pos.X + radius * float(cos(angle)), pos.Y + radius * float(sin(angle)), e->GetActorLocation().Z }, 10, { 1,1,1 }, 0.3);
+
+		m_vFormationRotated.Add({ pos.X + radius * FMath::Cos(angle * PI / 180), pos.Y + radius * FMath::Sin(angle * PI / 180), 0 });
+
+		angle += 360 / m_UnitCharacters.Num();
+	}
+}
+
+void AUnrealFormationsCharacter::ConstructTriangleFormation()
+{
+	m_vFormationDefault.Empty();
+	//
+	m_fpCurrentFormation = &AUnrealFormationsCharacter::ConstructTriangleFormation;
+	//
+	if (m_UnitCharacters.Num() < 1)
+		return;
+
+	FVector pos = GetActorLocation();
+	float spacing = 150;
+	float averageY{};
+
+	int currentAgent{ 0 };
+	for (size_t row = 1; row < m_UnitCharacters.Num(); ++row)
+	{
+		float x { 0 - ( float(row) / 2) };
+		float y { row * spacing };
+		for (size_t column{ 0 }; column < row; ++column)
+		{
+			m_vFormationDefault.Add(FVector{ pos.X + (x * spacing), pos.Y + y, 0 });
+			x += 1;
+
+			++currentAgent;
+			if (currentAgent == m_UnitCharacters.Num())
+			{
+				averageY = row * spacing / 2;
+				goto jump;
+			}
+		}
+	}
+
+jump: //here add averageY so that the center point is in the center of the triangle;
+	for (auto e : m_vFormationDefault)
+	{
+		e.Y -= averageY;
+	}
+
+	m_vFormationRotated = m_vFormationDefault;
+}
+
+void AUnrealFormationsCharacter::ApplyRotation()
+{
+	m_vFormationRotated.Empty();
+	//Rotate
+	float angle = (m_vTargetLocation - GetActorLocation()).Rotation().Yaw;
+	FVector currentPos{};
+	for (auto e : m_vFormationDefault)
+	{
+		currentPos.X = cos(angle) * (e.X - GetActorLocation().X) - sin(angle) * (e.Y - GetActorLocation().Y) + GetActorLocation().X;
+		currentPos.Y = sin(angle) * (e.X - GetActorLocation().X) + cos(angle) * (e.Y - GetActorLocation().Y) + GetActorLocation().Y;
+
+		m_vFormationRotated.Add(currentPos);
+	}
 }

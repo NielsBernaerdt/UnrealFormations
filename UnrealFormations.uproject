@@ -11,6 +11,11 @@
 			"AdditionalDependencies": [
 				"Engine"
 			]
-		}
+		},
+		{
+            		"Name": "Steering",
+           		"Type": "Runtime",
+            		"LoadingPhase": "PostEngineInit"
+       		}
 	]
 }

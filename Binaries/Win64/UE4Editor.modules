@@ -2,6 +2,7 @@
 	"BuildId": "17155196",
 	"Modules": 
 	{
-		"UnrealFormations": "UE4Editor-UnrealFormations-5659.dll"
+		"Steering": "UE4Editor-Steering-0032.dll",
+		"UnrealFormations": "UE4Editor-UnrealFormations-9938.dll"
 	}
 }

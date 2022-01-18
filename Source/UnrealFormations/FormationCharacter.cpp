@@ -35,15 +35,17 @@ void AFormationCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	SetTarget(GetActorLocation());
+	SetTarget(FVector{ 0,0,0 });
 }
 
 // Called every frame
 void AFormationCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
 	
-	m_vTarget.Z = GetActorLocation().Z;
-	FVector v = m_vTarget - GetActorLocation();
-	AddMovementInput(v);
+	if (FVector::Dist(m_vTarget, GetActorLocation()) > m_fAnimationDistance)
+		AddMovementInput(m_vTarget - GetActorLocation());
+	else
+		AddMovementInput({ 0,0,0 });
 }

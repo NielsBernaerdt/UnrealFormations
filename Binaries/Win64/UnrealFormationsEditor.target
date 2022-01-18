@@ -872,6 +872,14 @@
 			"Type": "SymbolFile"
 		},
 		{
+			"Path": "$(ProjectDir)/Binaries/Win64/UE4Editor-Steering.dll",
+			"Type": "DynamicLibrary"
+		},
+		{
+			"Path": "$(ProjectDir)/Binaries/Win64/UE4Editor-Steering.pdb",
+			"Type": "SymbolFile"
+		},
+		{
 			"Path": "$(EngineDir)/Binaries/Win64/UE4Editor-BuildSettings.dll",
 			"Type": "DynamicLibrary"
 		},
