@@ -70,6 +70,7 @@ void AUnrealFormationsCharacter::SetupPlayerInputComponent(class UInputComponent
 	PlayerInputComponent->BindAction("LineFormation", IE_Released, this, &AUnrealFormationsCharacter::ConstructLineFormation);
 	PlayerInputComponent->BindAction("CircleFormation", IE_Released, this, &AUnrealFormationsCharacter::ConstructCircleFormation);
 	PlayerInputComponent->BindAction("TriangleFormation", IE_Released, this, &AUnrealFormationsCharacter::ConstructTriangleFormation);
+	PlayerInputComponent->BindAction("SquareFormation", IE_Released, this, &AUnrealFormationsCharacter::ConstructSquareFormation);
 }
 
 void AUnrealFormationsCharacter::Tick(float DeltaSeconds)
@@ -92,12 +93,7 @@ void AUnrealFormationsCharacter::Tick(float DeltaSeconds)
 				m_vTargetLocation = TraceHitResult.Location;
 				(this->*m_fpCurrentFormation)();
 			}
-			size_t i{};
-			for (auto e : m_UnitCharacters)
-			{
-				e->SetTarget(m_vFormationRotated[i]);
-				++i;
-			}
+
 		}
 	}
 }
@@ -131,106 +127,234 @@ void AUnrealFormationsCharacter::AddUnitCharacter(AFormationCharacter* unitChara
 	m_UnitCharacters.Add(unitCharacter);
 }
 
+void AUnrealFormationsCharacter::GiveUnitsTarget()
+{
+	size_t i{};
+	for (auto e : m_UnitCharacters)
+	{
+		e->SetTarget(m_vFormationRotated[i]);
+		++i;
+	}
+}
+
 void AUnrealFormationsCharacter::ConstructLineFormation()
 {
 	//
 	m_fpCurrentFormation = &AUnrealFormationsCharacter::ConstructLineFormation;
-	//
-	float spacing = 150;
+	if (m_UnitCharacters.Num() < 1)
+		return;
 	m_vFormationDefault.Empty();
-	FVector pos = GetActorLocation();
-	pos.X -= m_UnitCharacters.Num() / 2 * spacing;
-	for (auto e : m_UnitCharacters)
+	//
+	int agentsPerLine{ 5 };
+	FVector cPos = m_vTargetLocation;
+	cPos.X -= agentsPerLine / 2.0 * m_fSpacing;
+
+	for (size_t row{0}; row < (m_UnitCharacters.Num() / agentsPerLine); ++row)
 	{
-		m_vFormationDefault.Add(pos);
-		e->SetTarget(pos);
-		pos.X += spacing;
+		for (size_t column{0}; column < agentsPerLine; ++column)
+		{
+			m_vFormationDefault.Add(
+				{
+					cPos.X + column * m_fSpacing,
+					cPos.Y + row * m_fSpacing,
+					cPos.Z
+				});
+		}
 	}
-	//apply rotation
+	int agentsLeft{ m_UnitCharacters.Num() % agentsPerLine };
+	cPos = m_vTargetLocation;
+	cPos.X -= agentsLeft / 2.0 * m_fSpacing;
+	cPos.Y += (m_UnitCharacters.Num() / agentsPerLine) * m_fSpacing;
+	for (size_t extra{ 0 }; extra < agentsLeft; ++extra)
+	{
+		m_vFormationDefault.Add(
+			{
+				cPos.X + extra * m_fSpacing,
+				cPos.Y,
+				cPos.Z
+			});
+	}
+	//Translate formationcenter to actual center
+	float avgY = abs(m_vFormationDefault.Last().Y - m_vFormationDefault[0].Y) / 2;
+	for (FVector& e : m_vFormationDefault)
+	{
+		e.Y -= avgY;
+	}
+
+
 	ApplyRotation();
+	GiveUnitsTarget();
 }
 
 void AUnrealFormationsCharacter::ConstructCircleFormation()
 {
 	//
 	m_fpCurrentFormation = &AUnrealFormationsCharacter::ConstructCircleFormation;
-	//
 	if (m_UnitCharacters.Num() == 0)
 		return;
-
 	m_vFormationRotated.Empty();
-	FVector origin = GetActorLocation();
-	float spacing = 150;
-	float radius = spacing * m_UnitCharacters.Num() / (2 * PI);
+	//
+	FVector cPos = m_vTargetLocation;
+	float radius = m_fSpacing * m_UnitCharacters.Num() / (2 * PI);
 	float angle = 360 / m_UnitCharacters.Num();
-	FVector pos = GetActorLocation();
-
-
 
 	for (auto e : m_UnitCharacters)
 	{
-		//e->SetTarget(FVector{ float(pos.X + radius * cos(angle)), float(pos.Y + radius * sin(angle)), 0 });
-	
-		//UKismetSystemLibrary::DrawDebugPoint(e, { pos.X + radius * float(cos(angle)), pos.Y + radius * float(sin(angle)), e->GetActorLocation().Z }, 10, { 1,1,1 }, 0.3);
-
-		m_vFormationRotated.Add({ pos.X + radius * FMath::Cos(angle * PI / 180), pos.Y + radius * FMath::Sin(angle * PI / 180), 0 });
-
+		m_vFormationRotated.Add({ cPos.X + radius * FMath::Cos(angle * PI / 180), cPos.Y + radius * FMath::Sin(angle * PI / 180), cPos.Z });
 		angle += 360 / m_UnitCharacters.Num();
 	}
+
+	GiveUnitsTarget();
 }
 
 void AUnrealFormationsCharacter::ConstructTriangleFormation()
 {
-	m_vFormationDefault.Empty();
 	//
 	m_fpCurrentFormation = &AUnrealFormationsCharacter::ConstructTriangleFormation;
-	//
 	if (m_UnitCharacters.Num() < 1)
 		return;
-
-	FVector pos = GetActorLocation();
-	float spacing = 150;
-	float averageY{};
-
+	m_vFormationDefault.Empty();
+	//
+	FVector pos = m_vTargetLocation;
 	int currentAgent{ 0 };
-	for (size_t row = 1; row < m_UnitCharacters.Num(); ++row)
+	float maxRow = (-1 + FMath::Sqrt(1 + 8 * m_UnitCharacters.Num())) / 2;  //calculate the row of an index in a triangular array
+	maxRow = ceil(maxRow);
+	for (size_t row = 1; row < size_t(maxRow) + 1; ++row)
 	{
 		float x { 0 - ( float(row) / 2) };
-		float y { row * spacing };
+		float y { row * m_fSpacing };
 		for (size_t column{ 0 }; column < row; ++column)
 		{
-			m_vFormationDefault.Add(FVector{ pos.X + (x * spacing), pos.Y + y, 0 });
+			m_vFormationDefault.Add(FVector{ pos.X + (x * m_fSpacing),  pos.Y + y, pos.Z });
 			x += 1;
 
 			++currentAgent;
 			if (currentAgent == m_UnitCharacters.Num())
 			{
-				averageY = row * spacing / 2;
 				goto jump;
 			}
 		}
 	}
 
-jump: //here add averageY so that the center point is in the center of the triangle;
-	for (auto e : m_vFormationDefault)
+jump: //Translate formationcenter to actual center
+	float avgY = abs(m_vFormationDefault.Last().Y - m_vFormationDefault[0].Y) / 2;
+	for (FVector& e : m_vFormationDefault)
 	{
-		e.Y -= averageY;
+		e.X += m_fSpacing / 2;
+		e.Y -= m_fSpacing;
+		e.Y -= avgY;
 	}
 
 	m_vFormationRotated = m_vFormationDefault;
+	GiveUnitsTarget();
 }
 
-void AUnrealFormationsCharacter::ApplyRotation()
+void AUnrealFormationsCharacter::ConstructSquareFormation()
 {
-	m_vFormationRotated.Empty();
-	//Rotate
-	float angle = (m_vTargetLocation - GetActorLocation()).Rotation().Yaw;
-	FVector currentPos{};
-	for (auto e : m_vFormationDefault)
+	//
+	m_fpCurrentFormation = &AUnrealFormationsCharacter::ConstructSquareFormation;
+	if (m_UnitCharacters.Num() < 4)
 	{
-		currentPos.X = cos(angle) * (e.X - GetActorLocation().X) - sin(angle) * (e.Y - GetActorLocation().Y) + GetActorLocation().X;
-		currentPos.Y = sin(angle) * (e.X - GetActorLocation().X) + cos(angle) * (e.Y - GetActorLocation().Y) + GetActorLocation().Y;
-
-		m_vFormationRotated.Add(currentPos);
+		ConstructCircleFormation();
+		m_fpCurrentFormation = &AUnrealFormationsCharacter::ConstructSquareFormation;
+		return;
 	}
+	m_vFormationDefault.Empty();
+	//Calculate side length:
+	int nrAgentsExtra = m_UnitCharacters.Num() % 4;
+	FVector cPos = m_vTargetLocation;
+	float sideLength{};
+	if (nrAgentsExtra != 0)
+		sideLength = (m_UnitCharacters.Num() / 4 + 1) * m_fSpacing;
+	else
+		sideLength = (m_UnitCharacters.Num() / 4) * m_fSpacing;
+	int agentsOnThisSide{};
+	FVector currentPos{};
+	//Upperside
+	if (nrAgentsExtra != 0)
+	{
+		--nrAgentsExtra;
+		agentsOnThisSide = m_UnitCharacters.Num() / 4 + 1;
+	}
+	else
+		agentsOnThisSide = m_UnitCharacters.Num() / 4 ;
+	currentPos = { cPos.X - sideLength / 2, cPos.Y + sideLength / 2, cPos.Z };
+	for (size_t i{}; i < agentsOnThisSide; ++i)
+	{
+		m_vFormationDefault.Add(currentPos);
+		currentPos.X += sideLength / agentsOnThisSide;
+	}
+	//RightSide
+	if (nrAgentsExtra != 0)
+	{
+		--nrAgentsExtra;
+		agentsOnThisSide = m_UnitCharacters.Num() / 4 + 1;
+	}
+	else
+		agentsOnThisSide = m_UnitCharacters.Num() / 4;
+	currentPos = { cPos.X + sideLength / 2, cPos.Y + sideLength / 2, cPos.Z };
+	for (size_t i{}; i < agentsOnThisSide; ++i)
+	{
+		m_vFormationDefault.Add(currentPos);
+		currentPos.Y -= sideLength / agentsOnThisSide;
+	}
+	//LowerSide
+	if (nrAgentsExtra != 0)
+	{
+		--nrAgentsExtra;
+		agentsOnThisSide = m_UnitCharacters.Num() / 4 + 1;
+	}
+	else
+		agentsOnThisSide = m_UnitCharacters.Num() / 4;
+	currentPos = { cPos.X + sideLength / 2, cPos.Y - sideLength / 2, cPos.Z };
+	for (size_t i{}; i < agentsOnThisSide; ++i)
+	{
+		m_vFormationDefault.Add(currentPos);
+		currentPos.X -= sideLength / agentsOnThisSide;
+	}
+	//LeftSide
+	if (nrAgentsExtra != 0)
+	{
+		--nrAgentsExtra;
+		agentsOnThisSide = m_UnitCharacters.Num() / 4 + 1;
+	}
+	else
+		agentsOnThisSide = m_UnitCharacters.Num() / 4;
+	currentPos = { cPos.X - sideLength / 2, cPos.Y - sideLength / 2, cPos.Z };
+	for (size_t i{}; i < agentsOnThisSide; ++i)
+	{
+		m_vFormationDefault.Add(currentPos);
+		currentPos.Y += sideLength / agentsOnThisSide;
+	}
+
+	m_vFormationRotated = m_vFormationDefault;
+	GiveUnitsTarget();
+}
+
+void AUnrealFormationsCharacter::ApplyRotation() //Point rotation over center point of formation
+{
+	m_vFormationRotated = m_vFormationDefault;
+
+	//m_vFormationRotated.Empty();
+
+	//float angle = ((GetActorLocation() + GetActorForwardVector()) - GetActorLocation()).Rotation().Yaw - (m_vTargetLocation - GetActorLocation()).Rotation().Yaw;
+	////Fix some of the possible angle values
+	//if (angle < -180)
+	//	angle += 360;
+	//else if (angle > 180)
+	//	angle -= 360;
+	//angle = angle * PI / 180;
+	////
+	//FVector cPos = GetActorLocation();
+	//FVector currentPos{};
+	////
+	//
+	//for (auto point : m_vFormationDefault)
+	//{
+	//	currentPos.X = cos(angle) * (point.X - cPos.X) - sin(angle) * (point.Y - cPos.Y) + cPos.X;
+
+	//	currentPos.Y = sin(angle) * (point.X - cPos.X) + cos(angle) * (point.Y - cPos.Y) + cPos.Y;
+
+	//	m_vFormationRotated.Add(currentPos);
+	//}
 }

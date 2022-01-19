@@ -49,11 +49,12 @@ private:
 	FVector m_vTargetLocation;
 	TArray<FVector> m_vFormationDefault;
 	TArray<FVector> m_vFormationRotated;
-	int nrActors = 0;
+	float m_fSpacing = 100;
 
 	void ConstructLineFormation();
 	void ConstructCircleFormation();
 	void ConstructTriangleFormation();
+	void ConstructSquareFormation();
 	void ApplyRotation();
 	void (AUnrealFormationsCharacter::*m_fpCurrentFormation)() = &AUnrealFormationsCharacter::ConstructLineFormation;
 
@@ -61,4 +62,5 @@ protected:
 	void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent);
 	void SpawnActors();
 	void DestroyActors();
+	void GiveUnitsTarget();
 };

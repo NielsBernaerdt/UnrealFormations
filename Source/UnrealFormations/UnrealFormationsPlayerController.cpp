@@ -13,6 +13,13 @@ AUnrealFormationsPlayerController::AUnrealFormationsPlayerController()
 	DefaultMouseCursor = EMouseCursor::Crosshairs;
 }
 
+void AUnrealFormationsPlayerController::BeginPlay()
+{
+	Super::BeginPlay();
+
+	m_vTarget = GetPawn()->GetActorLocation();
+}
+
 void AUnrealFormationsPlayerController::PlayerTick(float DeltaTime)
 {
 	Super::PlayerTick(DeltaTime);
@@ -20,8 +27,9 @@ void AUnrealFormationsPlayerController::PlayerTick(float DeltaTime)
 	// keep updating the destination every tick while desired
 	if (bMoveToMouseCursor)
 	{
-		MoveToMouseCursor();
+		SetMouseAstarget();
 	}
+	SetNewMoveDestination(m_vTarget);
 }
 
 void AUnrealFormationsPlayerController::SetupInputComponent()
@@ -33,7 +41,7 @@ void AUnrealFormationsPlayerController::SetupInputComponent()
 	InputComponent->BindAction("SetDestination", IE_Released, this, &AUnrealFormationsPlayerController::OnSetDestinationReleased);
 }
 
-void AUnrealFormationsPlayerController::MoveToMouseCursor()
+void AUnrealFormationsPlayerController::SetMouseAstarget()
 {
 	// Trace to see what is under the mouse cursor
 	FHitResult Hit;
@@ -42,7 +50,7 @@ void AUnrealFormationsPlayerController::MoveToMouseCursor()
 	if (Hit.bBlockingHit)
 	{
 		// We hit something, move there
-		SetNewMoveDestination(Hit.ImpactPoint);
+		m_vTarget = Hit.ImpactPoint;
 	}
 }
 
@@ -53,11 +61,10 @@ void AUnrealFormationsPlayerController::SetNewMoveDestination(const FVector Dest
 	{
 		float const Distance = FVector::Dist(DestLocation, MyPawn->GetActorLocation());
 
-		// We need to issue move command only if far enough in order for walk animation to play correctly
-		if ((Distance > 120.0f))
-		{
-			UAIBlueprintHelperLibrary::SimpleMoveToLocation(this, DestLocation);
-		}
+		if (Distance > 100)
+			MyPawn->AddMovementInput(DestLocation - MyPawn->GetActorLocation());
+		else
+			MyPawn->AddMovementInput({ 0,0,0 });
 	}
 }
 

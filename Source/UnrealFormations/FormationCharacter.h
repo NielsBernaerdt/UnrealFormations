@@ -25,5 +25,5 @@ public:
 
 private:
 	FVector m_vTarget;
-	const float m_fAnimationDistance = 10;
+	const float m_fAnimationDistance = 100;
 };

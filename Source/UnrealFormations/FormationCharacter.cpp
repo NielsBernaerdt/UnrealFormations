@@ -42,10 +42,12 @@ void AFormationCharacter::BeginPlay()
 void AFormationCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 	
 	if (FVector::Dist(m_vTarget, GetActorLocation()) > m_fAnimationDistance)
 		AddMovementInput(m_vTarget - GetActorLocation());
 	else
+	{
 		AddMovementInput({ 0,0,0 });
+		m_vTarget = GetActorLocation();
+	}
 }

@@ -22,8 +22,10 @@ protected:
 	virtual void SetupInputComponent() override;
 	// End PlayerController interface
 
+	virtual void BeginPlay() override;
+
 	/** Navigate player to the current mouse cursor location. */
-	void MoveToMouseCursor();
+	void SetMouseAstarget();
 	
 	/** Navigate player to the given world location. */
 	void SetNewMoveDestination(const FVector DestLocation);
@@ -31,4 +33,7 @@ protected:
 	/** Input handlers for SetDestination action. */
 	void OnSetDestinationPressed();
 	void OnSetDestinationReleased();
+
+private:
+	FVector m_vTarget;
 };
