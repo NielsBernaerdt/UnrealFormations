@@ -33,11 +33,8 @@ void AActorSpawner::SpawnActor()
 	FVector SpawnLocation = GetActorLocation();
 	FRotator SpawnRotation = GetActorRotation();
 
-	UObject* SpawnActor = Cast<UObject>(StaticLoadObject(UObject::StaticClass(), NULL, TEXT("/Game/TopDownCPP/Blueprints/BP_FormationCharacter")));
-	UBlueprint* GeneratedBP = Cast<UBlueprint>(SpawnActor);
-
 	if (AUnrealFormationsCharacter* MyPawn = Cast<AUnrealFormationsCharacter>(UGameplayStatics::GetPlayerPawn(this, 0)))
 	{
-		MyPawn->AddUnitCharacter(GetWorld()->SpawnActor<AFormationCharacter>(GeneratedBP->GeneratedClass, SpawnLocation, SpawnRotation));
+		MyPawn->AddUnitCharacter(GetWorld()->SpawnActor<AFormationCharacter>(m_refUnitCharacter, SpawnLocation, SpawnRotation));
 	}
 }

@@ -1,7 +1,10 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+//#include "FormationCharacter.h"
 #include "ActorSpawner.generated.h"
+
+class AFormationCharacter;
 
 UCLASS()
 class UNREALFORMATIONS_API AActorSpawner : public AActor
@@ -14,6 +17,8 @@ public:
 	//
 	UFUNCTION()
 		void SpawnActor();
+	UPROPERTY(EditDefaultsOnly, Category = "ActorSpawning")
+		TSubclassOf<AFormationCharacter> m_refUnitCharacter;
 
 protected:
 	// Called when the game starts or when spawned

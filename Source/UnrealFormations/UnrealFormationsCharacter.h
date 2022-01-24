@@ -30,6 +30,16 @@ public:
 	//
 	void AddUnitCharacter(AFormationCharacter* unitCharacter);
 	void SetMoveToCursor(bool b) { m_bMoveToCursor = b; }
+	void SetCurrentOrientation(FVector orientation) { m_vCurrentOrientation = orientation; }
+	// Make functions public and accessible so that it can be accessed in the hud widget blueprint ONLY FOR DEMO PURPOSES
+	UFUNCTION(BlueprintCallable, Category = "Formation") void ConstructLineFormation();
+	UFUNCTION(BlueprintCallable, Category = "Formation") void ConstructCircleFormation();
+	UFUNCTION(BlueprintCallable, Category = "Formation") void ConstructTriangleFormation();
+	UFUNCTION(BlueprintCallable, Category = "Formation") void ConstructSquareFormation();
+	UFUNCTION(BlueprintCallable, Category = "Formation") void SpawnActors();
+	UFUNCTION(BlueprintCallable, Category = "Formation") void DestroyActors();
+	UPROPERTY(BlueprintReadWrite, Category = "Debug")
+		bool m_bEnableDebug = false;
 
 private:
 	/** Top down camera */
@@ -50,17 +60,12 @@ private:
 	TArray<FVector> m_vFormationDefault;
 	TArray<FVector> m_vFormationRotated;
 	float m_fSpacing = 100;
+	FVector m_vCurrentOrientation;
 
-	void ConstructLineFormation();
-	void ConstructCircleFormation();
-	void ConstructTriangleFormation();
-	void ConstructSquareFormation();
 	void ApplyRotation();
 	void (AUnrealFormationsCharacter::*m_fpCurrentFormation)() = &AUnrealFormationsCharacter::ConstructLineFormation;
 
 protected:
 	void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent);
-	void SpawnActors();
-	void DestroyActors();
 	void GiveUnitsTarget();
 };

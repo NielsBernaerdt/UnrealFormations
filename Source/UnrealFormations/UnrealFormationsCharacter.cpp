@@ -17,6 +17,7 @@
 #include "ActorSpawner.h"
 #include "FormationCharacter.h"
 #include "Steering/SteeringBehaviours.h"
+#include <algorithm>
 
 AUnrealFormationsCharacter::AUnrealFormationsCharacter()
 {
@@ -61,6 +62,9 @@ AUnrealFormationsCharacter::AUnrealFormationsCharacter()
 	// Activate ticking in order to update the cursor every frame.
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = true;
+
+	//
+	m_vTargetLocation = GetActorLocation();
 }
 
 void AUnrealFormationsCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
@@ -90,10 +94,19 @@ void AUnrealFormationsCharacter::Tick(float DeltaSeconds)
 
 			if (m_bMoveToCursor == true)
 			{
+				m_bMoveToCursor = false;
 				m_vTargetLocation = TraceHitResult.Location;
 				(this->*m_fpCurrentFormation)();
 			}
 
+		}
+	}
+	//Debug part
+	if (m_bEnableDebug)
+	{
+		for (auto e : m_vFormationRotated)
+		{
+			UKismetSystemLibrary::DrawDebugPoint(this, e, 10.f, { 0,1,0 }, 0.3f);
 		}
 	}
 }
@@ -129,12 +142,27 @@ void AUnrealFormationsCharacter::AddUnitCharacter(AFormationCharacter* unitChara
 
 void AUnrealFormationsCharacter::GiveUnitsTarget()
 {
-	size_t i{};
+	int i{};
 	for (auto e : m_UnitCharacters)
 	{
 		e->SetTarget(m_vFormationRotated[i]);
 		++i;
 	}
+
+	//TArray<FVector> tempArray = m_vFormationRotated;
+	//for (auto& e : m_UnitCharacters)
+	//{
+	//	tempArray.Sort([&e](const FVector& A, const FVector& B)
+	//		{
+	//			float DistanceA = FVector::DistSquared(e->GetActorLocation(), A);
+	//			float DistanceB = FVector::DistSquared(e->GetActorLocation(), B);
+
+	//			return DistanceA < DistanceB;
+	//		});
+
+	//	e->SetTarget(tempArray[0]);
+	//	tempArray.RemoveAt(0);
+	//}
 }
 
 void AUnrealFormationsCharacter::ConstructLineFormation()
@@ -181,7 +209,6 @@ void AUnrealFormationsCharacter::ConstructLineFormation()
 		e.Y -= avgY;
 	}
 
-
 	ApplyRotation();
 	GiveUnitsTarget();
 }
@@ -192,7 +219,7 @@ void AUnrealFormationsCharacter::ConstructCircleFormation()
 	m_fpCurrentFormation = &AUnrealFormationsCharacter::ConstructCircleFormation;
 	if (m_UnitCharacters.Num() == 0)
 		return;
-	m_vFormationRotated.Empty();
+	m_vFormationDefault.Empty();
 	//
 	FVector cPos = m_vTargetLocation;
 	float radius = m_fSpacing * m_UnitCharacters.Num() / (2 * PI);
@@ -200,10 +227,11 @@ void AUnrealFormationsCharacter::ConstructCircleFormation()
 
 	for (auto e : m_UnitCharacters)
 	{
-		m_vFormationRotated.Add({ cPos.X + radius * FMath::Cos(angle * PI / 180), cPos.Y + radius * FMath::Sin(angle * PI / 180), cPos.Z });
+		m_vFormationDefault.Add({ cPos.X + radius * FMath::Cos(angle * PI / 180), cPos.Y + radius * FMath::Sin(angle * PI / 180), cPos.Z });
 		angle += 360 / m_UnitCharacters.Num();
 	}
 
+	ApplyRotation();
 	GiveUnitsTarget();
 }
 
@@ -245,7 +273,7 @@ jump: //Translate formationcenter to actual center
 		e.Y -= avgY;
 	}
 
-	m_vFormationRotated = m_vFormationDefault;
+	ApplyRotation();
 	GiveUnitsTarget();
 }
 
@@ -327,17 +355,29 @@ void AUnrealFormationsCharacter::ConstructSquareFormation()
 		currentPos.Y += sideLength / agentsOnThisSide;
 	}
 
-	m_vFormationRotated = m_vFormationDefault;
+	ApplyRotation();
 	GiveUnitsTarget();
 }
 
 void AUnrealFormationsCharacter::ApplyRotation() //Point rotation over center point of formation
 {
+
 	m_vFormationRotated = m_vFormationDefault;
 
+	if (m_bEnableDebug)
+	{
+		// current orientation
+		UKismetSystemLibrary::DrawDebugArrow(this, GetActorLocation(), GetActorLocation() + 100 * m_vCurrentOrientation, 1.f, { 1,0,0 }, 2.f, 3.f);
+
+		// desired orientation
+		UKismetSystemLibrary::DrawDebugArrow(this, GetActorLocation(), m_vTargetLocation, 1.f, { 0,0,1 }, 2.f, 3.f);
+	}
+
+	////1. empty array
 	//m_vFormationRotated.Empty();
 
-	//float angle = ((GetActorLocation() + GetActorForwardVector()) - GetActorLocation()).Rotation().Yaw - (m_vTargetLocation - GetActorLocation()).Rotation().Yaw;
+	////3. calculate angle over which to rotate
+	//float angle = (GetActorLocation() + m_vCurrentOrientation).Rotation().Yaw - (m_vTargetLocation - GetActorLocation()).Rotation().Yaw;
 	////Fix some of the possible angle values
 	//if (angle < -180)
 	//	angle += 360;
@@ -346,15 +386,17 @@ void AUnrealFormationsCharacter::ApplyRotation() //Point rotation over center po
 	//angle = angle * PI / 180;
 	////
 	//FVector cPos = GetActorLocation();
-	//FVector currentPos{};
+	//FVector pointRotated{};
+	//pointRotated.Z = m_vFormationDefault[0].Z;
+	////pointRotated.Z = cPos.Z;
 	////
-	//
+
 	//for (auto point : m_vFormationDefault)
 	//{
-	//	currentPos.X = cos(angle) * (point.X - cPos.X) - sin(angle) * (point.Y - cPos.Y) + cPos.X;
+	//	pointRotated.X = cos(angle) * (point.X - cPos.X) - sin(angle) * (point.Y - cPos.Y) + cPos.X;
 
-	//	currentPos.Y = sin(angle) * (point.X - cPos.X) + cos(angle) * (point.Y - cPos.Y) + cPos.Y;
+	//	pointRotated.Y = sin(angle) * (point.X - cPos.X) + cos(angle) * (point.Y - cPos.Y) + cPos.Y;
 
-	//	m_vFormationRotated.Add(currentPos);
+	//	m_vFormationRotated.Add(pointRotated);
 	//}
 }

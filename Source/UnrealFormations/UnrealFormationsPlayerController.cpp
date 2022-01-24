@@ -56,7 +56,8 @@ void AUnrealFormationsPlayerController::SetMouseAstarget()
 
 void AUnrealFormationsPlayerController::SetNewMoveDestination(const FVector DestLocation)
 {
-	APawn* const MyPawn = GetPawn();
+	//APawn* const MyPawn = GetPawn();
+	AUnrealFormationsCharacter* MyPawn = Cast<AUnrealFormationsCharacter>(GetPawn());
 	if (MyPawn)
 	{
 		float const Distance = FVector::Dist(DestLocation, MyPawn->GetActorLocation());
@@ -64,7 +65,10 @@ void AUnrealFormationsPlayerController::SetNewMoveDestination(const FVector Dest
 		if (Distance > 100)
 			MyPawn->AddMovementInput(DestLocation - MyPawn->GetActorLocation());
 		else
+		{
 			MyPawn->AddMovementInput({ 0,0,0 });
+			MyPawn->SetCurrentOrientation(MyPawn->GetActorForwardVector());
+		}
 	}
 }
 
@@ -72,11 +76,6 @@ void AUnrealFormationsPlayerController::OnSetDestinationPressed()
 {
 	// set flag to keep updating destination until released
 	bMoveToMouseCursor = true;
-	AUnrealFormationsCharacter* MyPawn = Cast<AUnrealFormationsCharacter>(GetPawn());
-	if (MyPawn)
-	{
-		MyPawn->SetMoveToCursor(true);
-	}
 }
 
 void AUnrealFormationsPlayerController::OnSetDestinationReleased()
@@ -86,6 +85,6 @@ void AUnrealFormationsPlayerController::OnSetDestinationReleased()
 	AUnrealFormationsCharacter* MyPawn = Cast<AUnrealFormationsCharacter>(GetPawn());
 	if (MyPawn)
 	{
-		MyPawn->SetMoveToCursor(false);
+		MyPawn->SetMoveToCursor(true);
 	}
 }
