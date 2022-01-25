@@ -1,5 +1,4 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -54,7 +53,7 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UDecalComponent* CursorToWorld;
 	//
-	TArray<AFormationCharacter*> m_UnitCharacters;
+	TArray<AFormationCharacter*> m_aUnitCharacters;
 	bool m_bMoveToCursor = false;
 	FVector m_vTargetLocation;
 	TArray<FVector> m_vFormationDefault;

@@ -127,8 +127,6 @@ public:
 		FVector steering = {};
 
 		steering = m_Target.Position - pAgent->GetActorLocation();
-		//steering.LinearVelocity.Normalize();
-		//steering.LinearVelocity *= pAgent->GetMaxLinearSpeed();
 		return steering;
 	}
 };

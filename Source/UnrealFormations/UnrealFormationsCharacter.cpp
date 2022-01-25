@@ -126,50 +126,35 @@ void AUnrealFormationsCharacter::SpawnActors()
 
 void AUnrealFormationsCharacter::DestroyActors()
 {
-	if (m_UnitCharacters.Num() < 1)
+	if (m_aUnitCharacters.Num() < 1)
 		return;
 	//Destroy the last added actor
-	AActor* actor = m_UnitCharacters.Last();
-	m_UnitCharacters.RemoveAt(m_UnitCharacters.Num()-1);
+	AActor* actor = m_aUnitCharacters.Last();
+	m_aUnitCharacters.RemoveAt(m_aUnitCharacters.Num()-1);
 	actor->Destroy();
 	(this->*m_fpCurrentFormation)();
 }
 
 void AUnrealFormationsCharacter::AddUnitCharacter(AFormationCharacter* unitCharacter)
 {
-	m_UnitCharacters.Add(unitCharacter);
+	m_aUnitCharacters.Add(unitCharacter);
 }
 
 void AUnrealFormationsCharacter::GiveUnitsTarget()
 {
 	int i{};
-	for (auto e : m_UnitCharacters)
+	for (auto e : m_aUnitCharacters)
 	{
 		e->SetTarget(m_vFormationRotated[i]);
 		++i;
 	}
-
-	//TArray<FVector> tempArray = m_vFormationRotated;
-	//for (auto& e : m_UnitCharacters)
-	//{
-	//	tempArray.Sort([&e](const FVector& A, const FVector& B)
-	//		{
-	//			float DistanceA = FVector::DistSquared(e->GetActorLocation(), A);
-	//			float DistanceB = FVector::DistSquared(e->GetActorLocation(), B);
-
-	//			return DistanceA < DistanceB;
-	//		});
-
-	//	e->SetTarget(tempArray[0]);
-	//	tempArray.RemoveAt(0);
-	//}
 }
 
 void AUnrealFormationsCharacter::ConstructLineFormation()
 {
 	//
 	m_fpCurrentFormation = &AUnrealFormationsCharacter::ConstructLineFormation;
-	if (m_UnitCharacters.Num() < 1)
+	if (m_aUnitCharacters.Num() < 1)
 		return;
 	m_vFormationDefault.Empty();
 	//
@@ -177,7 +162,7 @@ void AUnrealFormationsCharacter::ConstructLineFormation()
 	FVector cPos = m_vTargetLocation;
 	cPos.X -= agentsPerLine / 2.0 * m_fSpacing;
 
-	for (size_t row{0}; row < (m_UnitCharacters.Num() / agentsPerLine); ++row)
+	for (size_t row{0}; row < (m_aUnitCharacters.Num() / agentsPerLine); ++row)
 	{
 		for (size_t column{0}; column < agentsPerLine; ++column)
 		{
@@ -189,10 +174,10 @@ void AUnrealFormationsCharacter::ConstructLineFormation()
 				});
 		}
 	}
-	int agentsLeft{ m_UnitCharacters.Num() % agentsPerLine };
+	int agentsLeft{ m_aUnitCharacters.Num() % agentsPerLine };
 	cPos = m_vTargetLocation;
 	cPos.X -= agentsLeft / 2.0 * m_fSpacing;
-	cPos.Y += (m_UnitCharacters.Num() / agentsPerLine) * m_fSpacing;
+	cPos.Y += (m_aUnitCharacters.Num() / agentsPerLine) * m_fSpacing;
 	for (size_t extra{ 0 }; extra < agentsLeft; ++extra)
 	{
 		m_vFormationDefault.Add(
@@ -207,8 +192,7 @@ void AUnrealFormationsCharacter::ConstructLineFormation()
 	for (FVector& e : m_vFormationDefault)
 	{
 		e.Y -= avgY;
-	}
-
+	}	
 	ApplyRotation();
 	GiveUnitsTarget();
 }
@@ -217,20 +201,19 @@ void AUnrealFormationsCharacter::ConstructCircleFormation()
 {
 	//
 	m_fpCurrentFormation = &AUnrealFormationsCharacter::ConstructCircleFormation;
-	if (m_UnitCharacters.Num() == 0)
+	if (m_aUnitCharacters.Num() == 0)
 		return;
 	m_vFormationDefault.Empty();
 	//
 	FVector cPos = m_vTargetLocation;
-	float radius = m_fSpacing * m_UnitCharacters.Num() / (2 * PI);
-	float angle = 360 / m_UnitCharacters.Num();
+	float radius = m_fSpacing * m_aUnitCharacters.Num() / (2 * PI);
+	float angle = 360 / m_aUnitCharacters.Num();
 
-	for (auto e : m_UnitCharacters)
+	for (auto e : m_aUnitCharacters)
 	{
 		m_vFormationDefault.Add({ cPos.X + radius * FMath::Cos(angle * PI / 180), cPos.Y + radius * FMath::Sin(angle * PI / 180), cPos.Z });
-		angle += 360 / m_UnitCharacters.Num();
+		angle += 360 / m_aUnitCharacters.Num();
 	}
-
 	ApplyRotation();
 	GiveUnitsTarget();
 }
@@ -239,13 +222,13 @@ void AUnrealFormationsCharacter::ConstructTriangleFormation()
 {
 	//
 	m_fpCurrentFormation = &AUnrealFormationsCharacter::ConstructTriangleFormation;
-	if (m_UnitCharacters.Num() < 1)
+	if (m_aUnitCharacters.Num() < 1)
 		return;
 	m_vFormationDefault.Empty();
 	//
 	FVector pos = m_vTargetLocation;
 	int currentAgent{ 0 };
-	float maxRow = (-1 + FMath::Sqrt(1 + 8 * m_UnitCharacters.Num())) / 2;  //calculate the row of an index in a triangular array
+	float maxRow = (-1 + FMath::Sqrt(1 + 8 * m_aUnitCharacters.Num())) / 2;  //calculate the row of an index in a triangular array
 	maxRow = ceil(maxRow);
 	for (size_t row = 1; row < size_t(maxRow) + 1; ++row)
 	{
@@ -257,7 +240,7 @@ void AUnrealFormationsCharacter::ConstructTriangleFormation()
 			x += 1;
 
 			++currentAgent;
-			if (currentAgent == m_UnitCharacters.Num())
+			if (currentAgent == m_aUnitCharacters.Num())
 			{
 				goto jump;
 			}
@@ -272,16 +255,14 @@ jump: //Translate formationcenter to actual center
 		e.Y -= m_fSpacing;
 		e.Y -= avgY;
 	}
-
 	ApplyRotation();
 	GiveUnitsTarget();
 }
 
 void AUnrealFormationsCharacter::ConstructSquareFormation()
 {
-	//
 	m_fpCurrentFormation = &AUnrealFormationsCharacter::ConstructSquareFormation;
-	if (m_UnitCharacters.Num() < 4)
+	if (m_aUnitCharacters.Num() < 4)
 	{
 		ConstructCircleFormation();
 		m_fpCurrentFormation = &AUnrealFormationsCharacter::ConstructSquareFormation;
@@ -289,23 +270,23 @@ void AUnrealFormationsCharacter::ConstructSquareFormation()
 	}
 	m_vFormationDefault.Empty();
 	//Calculate side length:
-	int nrAgentsExtra = m_UnitCharacters.Num() % 4;
+	int nrAgentsExtra = m_aUnitCharacters.Num() % 4;
 	FVector cPos = m_vTargetLocation;
 	float sideLength{};
 	if (nrAgentsExtra != 0)
-		sideLength = (m_UnitCharacters.Num() / 4 + 1) * m_fSpacing;
+		sideLength = (m_aUnitCharacters.Num() / 4 + 1) * m_fSpacing;
 	else
-		sideLength = (m_UnitCharacters.Num() / 4) * m_fSpacing;
+		sideLength = (m_aUnitCharacters.Num() / 4) * m_fSpacing;
 	int agentsOnThisSide{};
 	FVector currentPos{};
 	//Upperside
 	if (nrAgentsExtra != 0)
 	{
 		--nrAgentsExtra;
-		agentsOnThisSide = m_UnitCharacters.Num() / 4 + 1;
+		agentsOnThisSide = m_aUnitCharacters.Num() / 4 + 1;
 	}
 	else
-		agentsOnThisSide = m_UnitCharacters.Num() / 4 ;
+		agentsOnThisSide = m_aUnitCharacters.Num() / 4;
 	currentPos = { cPos.X - sideLength / 2, cPos.Y + sideLength / 2, cPos.Z };
 	for (size_t i{}; i < agentsOnThisSide; ++i)
 	{
@@ -316,10 +297,10 @@ void AUnrealFormationsCharacter::ConstructSquareFormation()
 	if (nrAgentsExtra != 0)
 	{
 		--nrAgentsExtra;
-		agentsOnThisSide = m_UnitCharacters.Num() / 4 + 1;
+		agentsOnThisSide = m_aUnitCharacters.Num() / 4 + 1;
 	}
 	else
-		agentsOnThisSide = m_UnitCharacters.Num() / 4;
+		agentsOnThisSide = m_aUnitCharacters.Num() / 4;
 	currentPos = { cPos.X + sideLength / 2, cPos.Y + sideLength / 2, cPos.Z };
 	for (size_t i{}; i < agentsOnThisSide; ++i)
 	{
@@ -330,10 +311,10 @@ void AUnrealFormationsCharacter::ConstructSquareFormation()
 	if (nrAgentsExtra != 0)
 	{
 		--nrAgentsExtra;
-		agentsOnThisSide = m_UnitCharacters.Num() / 4 + 1;
+		agentsOnThisSide = m_aUnitCharacters.Num() / 4 + 1;
 	}
 	else
-		agentsOnThisSide = m_UnitCharacters.Num() / 4;
+		agentsOnThisSide = m_aUnitCharacters.Num() / 4;
 	currentPos = { cPos.X + sideLength / 2, cPos.Y - sideLength / 2, cPos.Z };
 	for (size_t i{}; i < agentsOnThisSide; ++i)
 	{
@@ -344,17 +325,16 @@ void AUnrealFormationsCharacter::ConstructSquareFormation()
 	if (nrAgentsExtra != 0)
 	{
 		--nrAgentsExtra;
-		agentsOnThisSide = m_UnitCharacters.Num() / 4 + 1;
+		agentsOnThisSide = m_aUnitCharacters.Num() / 4 + 1;
 	}
 	else
-		agentsOnThisSide = m_UnitCharacters.Num() / 4;
+		agentsOnThisSide = m_aUnitCharacters.Num() / 4;
 	currentPos = { cPos.X - sideLength / 2, cPos.Y - sideLength / 2, cPos.Z };
 	for (size_t i{}; i < agentsOnThisSide; ++i)
 	{
 		m_vFormationDefault.Add(currentPos);
 		currentPos.Y += sideLength / agentsOnThisSide;
 	}
-
 	ApplyRotation();
 	GiveUnitsTarget();
 }
