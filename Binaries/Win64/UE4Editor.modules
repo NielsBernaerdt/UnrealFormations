@@ -1,0 +1,8 @@
+{
+	"BuildId": "17155196",
+	"Modules": 
+	{
+		"Steering": "UE4Editor-Steering.dll",
+		"UnrealFormations": "UE4Editor-UnrealFormations-3385.dll"
+	}
+}
